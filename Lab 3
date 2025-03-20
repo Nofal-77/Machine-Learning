@@ -1,0 +1,111 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn import metrics
+
+
+df=pd.read_csv("/content/dataset.csv")
+df.head()
+
+df.isna()
+
+df.isna().sum()
+
+X = df[['Distance_km', 'Preparation_Time_min']].values
+y = df['Delivery_Time_min'].values.reshape(-1, 1)
+
+X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+
+
+
+m = len(y)
+X_b = np.c_[np.ones((m, 1)), X]
+
+
+theta = np.zeros((3, 1))
+alpha = 0.01
+epochs = 1000
+
+#Cost Function (Mean Square Error)
+
+def compute_cost(X, y, theta):
+    m = len(y)
+    predictions = X.dot(theta)
+    cost = (1 / (2 * m)) * np.sum((predictions - y) ** 2)
+    return cost
+
+#Gradient descent
+def gradient_descent(X, y, theta, alpha, epochs):
+    m = len(y)
+    cost_history = []  # Store cost values for plotting
+
+    for epoch in range(epochs):
+        predictions = X.dot(theta)  # Compute hypothesis
+        errors = predictions - y  # Compute errors
+        gradients = (1 / m) * X.T.dot(errors)  # Compute gradients
+        theta -= alpha * gradients  # Update theta
+
+        cost = compute_cost(X, y, theta)  # Compute cost after update
+        cost_history.append(cost)  # Store cost
+
+        # Print cost every 100 iterations
+        if epoch % 100 == 0:
+            print(f"Epoch {epoch}: Cost = {cost}")
+
+    return theta, cost_history
+
+theta_optimal, cost_history = gradient_descent(X_b, y, theta, alpha, epochs)
+
+print("Optimized Theta Values:", theta_optimal.flatten())
+
+plt.plot(range(epochs), cost_history, color='blue')
+plt.xlabel("Iterations")
+plt.ylabel("Cost (MSE)")
+plt.title("Cost Function Convergence")
+plt.show()
+
+np.random.seed(42)
+X1 = 2 * np.random.rand(100, 1)
+X2 = 3 * np.random.rand(100, 1)
+y = 4 + 3 * X1 + 2 * X2 + np.random.randn(100, 1)
+
+X1,X2
+
+X_b = np.c_[np.ones((100, 1)), X1, X2]
+
+# Cost function for multiple linear regression
+def compute_cost(X, y, theta):
+    m = len(y)
+    predictions = X.dot(theta)
+    cost = (1 / (2 * m)) * np.sum(np.square(predictions - y))
+    return cost
+
+def gradient_descent(X, y, theta, learning_rate=0.1, iterations=1000):
+    m = len(y)
+    cost_history = []
+
+    for _ in range(iterations):
+        gradients = (1 / m) * X.T.dot(X.dot(theta) - y)
+        theta -= learning_rate * gradients
+        cost_history.append(compute_cost(X, y, theta))
+
+    return theta, cost_history
+
+theta = np.random.randn(3, 1)
+
+learning_rate = 0.1
+iterations = 1000
+theta_best, cost_history = gradient_descent(X_b, y, theta, learning_rate, iterations)
+
+plt.plot(range(iterations), cost_history, label='cost_function')
+plt.xlabel('Iterations')
+plt.ylabel('Cost')
+plt.title('cost_function_convergence')
+plt.legend()
+plt.show()
+
+
+print("Optimal Theta Values:")
+print(theta_best)
