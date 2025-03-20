@@ -1,0 +1,79 @@
+from google.colab import drive
+drive.mount("/content/drive")
+import pandas as pd
+import numpy as np
+import itertools
+dataset = pd.read_csv('diabetes1.csv')
+dataset.head()
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+# Load the dataset
+file_path = "diabetes1.csv"  # Update if needed
+df = pd.read_csv(file_path)
+
+# Drop duplicate rows to keep only unique records
+df_unique = df.drop_duplicates()
+
+# Define the number of subsets (change as needed)
+num_subsets = 5
+
+# Split the unique records into multiple subsets
+subsets = []
+remaining_data = df_unique.copy()
+
+for i in range(num_subsets - 1):  # Leave the last subset as remaining data
+    subset, remaining_data = train_test_split(remaining_data, test_size=(1 - 1/(num_subsets - i)))
+    subsets.append(subset)
+
+# Append the final remaining subset
+subsets.append(remaining_data)
+
+# Save subsets to CSV files
+for idx, subset in enumerate(subsets):
+    subset.to_csv("d.csv", index=False)
+
+print(f"{num_subsets} subsets have been created and saved.")
+
+def entropy(y):
+  if isinstance(y, pd.Series):
+    a = y.value_counts()/y.shape[0]
+    entropy = np.sum(-a*np.log2(a+1e-9))
+    return(entropy)
+  else:
+    raise('Object must be a Pandas Series.')
+
+entropy(dataset.target)
+
+def gini_index(a):
+  if isinstance(a, pd.Series):
+    b = a.value_counts() / a.shape[0]
+    gini = 1 - np.sum(b ** 2)
+    return(gini)
+  else:
+    raise ValueError("Object is not a Panda's series!")
+
+gini_index(dataset.target)
+
+def variance(y):
+  if(len(y) == 1):
+    return 0
+  else:
+    return y.var()
+
+def information_gain(y, mask, func=entropy):
+  a = sum(mask)
+  b = mask.shape[0] - a
+
+  if(a == 0 or b ==0):
+    gain = 0
+  else:
+    if y.dtypes != 'O':
+      gain = variance(y) - (a/(a+b)* variance(y[mask])) - (b/(a+b)*variance(y[-mask]))
+    else:
+      gain = func(y)-a/(a+b)*func(y[mask])-b/(a+b)*func(y[-mask])
+
+  return gain
+
+information_gain(dataset['Clicked on Ad'], dataset['Male'] == 1)
+
