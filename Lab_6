@@ -1,0 +1,179 @@
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+import matplotlib.pyplot as plt
+import random
+
+# Load the Iris dataset
+data = load_iris()
+X, y = data.data, data.target
+feature_names = data.feature_names
+class_names = data.target_names
+
+# Split into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Random Forest Classifier from scratch
+class RandomForestClassifierScratch:
+    def __init__(self, n_estimators=5, max_features='sqrt', max_depth=None):
+        self.n_estimators = n_estimators
+        self.max_features = max_features
+        self.max_depth = max_depth
+        self.trees = []
+        self.features_list = []
+
+    def _get_features(self, n_features):
+        if self.max_features == 'sqrt':
+            return random.sample(range(n_features), int(np.sqrt(n_features)))
+        elif isinstance(self.max_features, int):
+            return random.sample(range(n_features), self.max_features)
+        else:
+            return list(range(n_features))
+
+    def fit(self, X, y):
+        n_samples, n_features = X.shape
+        self.trees = []
+        self.features_list = []
+
+        for i in range(self.n_estimators):
+            # Bootstrap sample
+            indices = np.random.choice(n_samples, n_samples, replace=True)
+            X_sample, y_sample = X[indices], y[indices]
+
+            # Random subset of features
+            features = self._get_features(n_features)
+            self.features_list.append(features)
+
+            # Train Decision Tree
+            tree = DecisionTreeClassifier(max_depth=self.max_depth, random_state=i)
+            tree.fit(X_sample[:, features], y_sample)
+            self.trees.append(tree)
+
+    def predict(self, X):
+        predictions = []
+        for i, tree in enumerate(self.trees):
+            features = self.features_list[i]
+            pred = tree.predict(X[:, features])
+            predictions.append(pred)
+        
+        # Majority vote
+        predictions = np.array(predictions)
+        final_preds = []
+        for col in predictions.T:
+            values, counts = np.unique(col, return_counts=True)
+            final_preds.append(values[np.argmax(counts)])
+        return np.array(final_preds)
+
+# Initialize and train the Random Forest
+rf = RandomForestClassifierScratch(n_estimators=5, max_depth=3)
+rf.fit(X_train, y_train)
+y_pred = rf.predict(X_test)
+
+# Evaluation
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Precision (macro):", precision_score(y_test, y_pred, average='macro'))
+print("Recall (macro):", recall_score(y_test, y_pred, average='macro'))
+print("F1 Score (macro):", f1_score(y_test, y_pred, average='macro'))
+
+# Plot the individual trees
+for idx, tree in enumerate(rf.trees):
+    plt.figure(figsize=(12, 6))
+    plot_tree(tree,
+              feature_names=[feature_names[i] for i in rf.features_list[idx]],
+              class_names=class_names,
+              filled=True)
+    plt.title(f"Tree {idx + 1}")
+    plt.show()
+
+
+
+QUESTION NUM 2:
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import random
+
+# Load wine dataset
+data = load_wine()
+X, y = data.data, data.target
+feature_names = data.feature_names
+class_names = data.target_names
+
+# Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Modified Random Forest Classifier from scratch
+class RandomForestClassifierScratch:
+    def __init__(self, n_estimators=10, max_features=4, max_depth=5):
+        self.n_estimators = n_estimators
+        self.max_features = max_features
+        self.max_depth = max_depth
+        self.trees = []
+        self.features_list = []
+
+    def _get_features(self, n_features):
+        if isinstance(self.max_features, int):
+            return random.sample(range(n_features), self.max_features)
+        elif self.max_features == 'sqrt':
+            return random.sample(range(n_features), int(np.sqrt(n_features)))
+        else:
+            return list(range(n_features))
+
+    def fit(self, X, y):
+        self.trees = []
+        self.features_list = []
+        n_samples, n_features = X.shape
+
+        for i in range(self.n_estimators):
+            indices = np.random.choice(n_samples, n_samples, replace=True)
+            X_sample, y_sample = X[indices], y[indices]
+
+            features = self._get_features(n_features)
+            self.features_list.append(features)
+
+            tree = DecisionTreeClassifier(max_depth=self.max_depth, random_state=i)
+            tree.fit(X_sample[:, features], y_sample)
+            self.trees.append(tree)
+
+    def predict(self, X):
+        predictions = []
+        for i, tree in enumerate(self.trees):
+            features = self.features_list[i]
+            pred = tree.predict(X[:, features])
+            predictions.append(pred)
+
+        predictions = np.array(predictions)
+        final_preds = []
+        for col in predictions.T:
+            values, counts = np.unique(col, return_counts=True)
+            final_preds.append(values[np.argmax(counts)])
+        return np.array(final_preds)
+
+# Train model with modified hyperparameters
+rf = RandomForestClassifierScratch(n_estimators=10, max_features=4, max_depth=5)
+rf.fit(X_train, y_train)
+y_pred = rf.predict(X_test)
+
+# Metrics
+print("\n--- Performance Metrics on Wine Dataset ---")
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Precision (macro):", precision_score(y_test, y_pred, average='macro'))
+print("Recall (macro):", recall_score(y_test, y_pred, average='macro'))
+print("F1 Score (macro):", f1_score(y_test, y_pred, average='macro'))
+
+# Plot individual trees
+for idx, tree in enumerate(rf.trees):
+    plt.figure(figsize=(12, 6))
+    plot_tree(tree,
+              feature_names=[feature_names[i] for i in rf.features_list[idx]],
+              class_names=class_names,
+              filled=True)
+    plt.title(f"Decision Tree {idx + 1}")
+    plt.show()
