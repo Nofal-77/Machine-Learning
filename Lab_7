@@ -1,0 +1,152 @@
+QUESTION 1:
+
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+# Load and simplify data
+X, y = datasets.load_iris(return_X_y=True)
+X, y = X[y != 2, :2]  # Use only classes 0 and 1, and 2 features
+X = StandardScaler().fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+# Train linear SVM
+clf = SVC(kernel='linear')
+clf.fit(X_train, y_train)
+
+# Plot
+w, b = clf.coef_[0], clf.intercept_[0]
+xx = np.linspace(-2, 2)
+yy = -(w[0]*xx + b)/w[1]
+plt.scatter(*X.T, c=y, cmap='bwr')
+plt.plot(xx, yy, 'k--')
+plt.title("Linear SVC Decision Boundary")
+plt.show()
+
+
+QUESTION 2:
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+# Load binary Iris dataset (2 features, 2 classes)
+X, y = datasets.load_iris(return_X_y=True)
+X, y = X[y != 2, :2]
+X = StandardScaler().fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
+
+# Kernels to compare
+kernels = [
+    ('poly (deg=2)', SVC(kernel='poly', degree=2)),
+    ('poly (deg=3)', SVC(kernel='poly', degree=3)),
+    ('poly (deg=4)', SVC(kernel='poly', degree=4)),
+    ('rbf', SVC(kernel='rbf'))
+]
+
+# Plot setup
+fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+xx, yy = np.meshgrid(np.linspace(X[:,0].min()-1, X[:,0].max()+1, 300),
+                     np.linspace(X[:,1].min()-1, X[:,1].max()+1, 300))
+
+# Train, evaluate, and plot each model
+for ax, (label, model) in zip(axs.ravel(), kernels):
+    model.fit(X_train, y_train)
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+    ax.contourf(xx, yy, Z, alpha=0.3, cmap='bwr')
+    ax.scatter(*X_train.T, c=y_train, cmap='bwr', edgecolors='k')
+    acc = accuracy_score(y_test, model.predict(X_test))
+    ax.set_title(f"{label} - Accuracy: {acc:.2f}")
+
+plt.tight_layout()
+plt.show()
+
+
+QUESTION 3:
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+# Load Iris dataset (2 classes, 2 features for 2D plotting)
+X, y = datasets.load_iris(return_X_y=True)
+X, y = X[y != 2, :2]
+X = StandardScaler().fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+
+# Parameter grid: (kernel, C, gamma)
+configs = [
+    ('rbf', 0.1, 0.01), ('rbf', 1, 0.1), ('rbf', 10, 1),
+    ('poly', 0.1, 0.01), ('poly', 1, 0.1), ('poly', 10, 1)
+]
+
+# Meshgrid for decision boundary
+xx, yy = np.meshgrid(np.linspace(X[:,0].min()-1, X[:,0].max()+1, 300),
+                     np.linspace(X[:,1].min()-1, X[:,1].max()+1, 300))
+
+# Plot all combinations
+plt.figure(figsize=(15, 10))
+for i, (kernel, C, gamma) in enumerate(configs, 1):
+    model = SVC(kernel=kernel, C=C, gamma=gamma, degree=3 if kernel=='poly' else None)
+    model.fit(X_train, y_train)
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+    acc = accuracy_score(y_test, model.predict(X_test))
+
+    plt.subplot(2, 3, i)
+    plt.contourf(xx, yy, Z, cmap='bwr', alpha=0.3)
+    plt.scatter(*X_train.T, c=y_train, cmap='bwr', edgecolors='k')
+    plt.title(f"{kernel.upper()} | C={C}, gamma={gamma} \nAcc={acc:.2f}")
+    plt.xticks([]); plt.yticks([])
+
+plt.tight_layout()
+plt.show()
+
+
+QUESTION 4:
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_moons
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+
+# Generate dataset
+X, y = make_moons(n_samples=300, noise=0.25, random_state=0)
+X = StandardScaler().fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
+
+# Configurations to test
+configs = [
+    ('rbf', 0.1, 0.01), ('rbf', 1, 0.1), ('rbf', 10, 1),
+    ('poly', 0.1, 0.01), ('poly', 1, 0.1), ('poly', 10, 1)
+]
+
+# Meshgrid for decision surface
+xx, yy = np.meshgrid(np.linspace(X[:,0].min()-1, X[:,0].max()+1, 300),
+                     np.linspace(X[:,1].min()-1, X[:,1].max()+1, 300))
+
+# Plot
+plt.figure(figsize=(15, 10))
+for i, (kernel, C, gamma) in enumerate(configs, 1):
+    model = SVC(kernel=kernel, C=C, gamma=gamma, degree=3 if kernel=='poly' else None)
+    model.fit(X_train, y_train)
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+    acc = accuracy_score(y_test, model.predict(X_test))
+
+    plt.subplot(2, 3, i)
+    plt.contourf(xx, yy, Z, alpha=0.3, cmap='coolwarm')
+    plt.scatter(*X_train.T, c=y_train, cmap='coolwarm', edgecolors='k')
+    plt.title(f"{kernel.upper()} | C={C}, gamma={gamma}\nAcc: {acc:.2f}")
+    plt.xticks([]); plt.yticks([])
+
+plt.tight_layout()
+plt.show()
